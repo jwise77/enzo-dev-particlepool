@@ -163,7 +163,7 @@ int grid::TurbulenceInitializeGrid(float CloudDensity, float CloudSoundSpeed, FL
 
   for (field = 0; field < NumberOfBaryonFields; field++) {
     if (BaryonField[field] == NULL) {
-      BaryonField[field] = new float[size];
+      BaryonField[field] = static_cast<float*>(AllocateNewBaryonField(size));
       for (n = 0; n < size; n++) {
 	BaryonField[field][n] = 0.0;
       }
@@ -186,8 +186,8 @@ int grid::TurbulenceInitializeGrid(float CloudDensity, float CloudSoundSpeed, FL
   }
 
   for (dim = 0; dim < GridRank; dim++) {
-    TurbulenceVelocity[dim] = new float[size];
-    DrivingField[dim] = new float[size];
+    TurbulenceVelocity[dim] = AllocateNewBaryonField(size);
+    DrivingField[dim] = AllocateNewBaryonField(size);
     for (n = 0; n < activesize; n++) {
       TurbulenceVelocity[dim][n] = 0.0;
       DrivingField[dim][n] = 0.0;
@@ -604,8 +604,8 @@ int grid::TurbulenceInitializeGrid(float CloudDensity, float CloudSoundSpeed, FL
   }
 
   for (dim = 0; dim < GridRank; dim++) {
-    delete [] TurbulenceVelocity[dim];
-    delete [] DrivingField[dim];
+    FreeBaryonFieldMemory(TurbulenceVelocity[dim]);
+    FreeBaryonFieldMemory(DrivingField[dim]);
   }    
 
   /* Put a sink particle if we are studying massive star formation */

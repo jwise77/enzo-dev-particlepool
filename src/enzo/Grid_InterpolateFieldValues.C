@@ -63,7 +63,7 @@ extern "C" void FORTRAN_NAME(combine3d)(
 	       int *ivel_flag, int *irefine);
  
 /* InterpolateBoundaryFromParent function */
- 
+
 int grid::InterpolateFieldValues(grid *ParentGrid)
 {
  
@@ -230,11 +230,11 @@ int grid::InterpolateFieldValues(grid *ParentGrid)
  
     /* Allocate temporary space. */
  
-    TemporaryField        = new float[TempSize];
-    TemporaryDensityField = new float[TempSize];
-    Work                  = new float[WorkSize];
+    TemporaryField        = AllocateNewBaryonField(TempSize);
+    TemporaryDensityField = AllocateNewBaryonField(TempSize);
+    Work                  = AllocateNewBaryonField(WorkSize);
     for (field = 0; field < NumberOfBaryonFields; field++)
-      ParentTemp[field]     = new float[ParentTempSize];
+      ParentTemp[field]     = AllocateNewBaryonField(ParentTempSize);
  
     /* Copy just the required section from the parent fields to the temp
        space. */
@@ -338,14 +338,17 @@ int grid::InterpolateFieldValues(grid *ParentGrid)
 
       if (FieldType[field] != Density && FieldType[field] != DebugField) {
 	//      if (FieldType[field] != Density) {
-	FORTRAN_NAME(interpolate)(&GridRank,
-				  ParentTemp[field], ParentTempDim,
-				  ParentTempStartIndex, ParentTempEndIndex,
-                                     Refinement,
-				  TemporaryField, TempDim, ZeroVector, Work,
-				  &InterpolationMethod,
-				  &SecondOrderBFlag[field], &interp_error);
-	if (interp_error) {
+	
+	  FORTRAN_NAME(interpolate)(&GridRank,
+				    ParentTemp[field], ParentTempDim,
+				    ParentTempStartIndex, ParentTempEndIndex,
+				    Refinement,
+				    TemporaryField, TempDim, ZeroVector, Work,
+				    &InterpolationMethod,
+				    &SecondOrderBFlag[field], &interp_error);
+	  // With WritePotential early outputs might get a wrong value
+	  // do not break on this
+	  if (interp_error && (FieldType[field] != GravPotential)) {
 	  printf("P%d: Error interpolating field %d (%s).\n"
 		     "ParentGrid ID = %d\n"
 		     "\t LeftEdge  = %"PSYM" %"PSYM" %"PSYM"\n"
@@ -392,12 +395,12 @@ int grid::InterpolateFieldValues(grid *ParentGrid)
       if (FieldType[field] == Density)
 	FieldPointer = TemporaryDensityField;
       else 
-	  FieldPointer = TemporaryField;
+	FieldPointer = TemporaryField;
  
       /* Copy needed portion of temp field to current grid. */
  
-      if (BaryonField[field] == NULL)
-	BaryonField[field] = new float[GridSize];
+      if (BaryonField[field] == NULL && GridSize > 0)
+	BaryonField[field] = AllocateNewBaryonField(GridSize);
       if (BaryonField[field] == NULL) {
 	ENZO_FAIL("malloc error (out of memory?)\n");
       }
@@ -409,12 +412,12 @@ int grid::InterpolateFieldValues(grid *ParentGrid)
  
     } // end loop over fields
  
-    delete [] Work;
-    delete [] TemporaryField;
-    delete [] TemporaryDensityField;
+    FreeBaryonFieldMemory(Work);
+    FreeBaryonFieldMemory(TemporaryField);
+    FreeBaryonFieldMemory(TemporaryDensityField);
     for (field = 0; field < NumberOfBaryonFields; field++)
-      delete [] ParentTemp[field];
- 
+      FreeBaryonFieldMemory(ParentTemp[field]);
+    
     /* If using the dual energy formalism, then modify the total energy field
        to maintain consistency between the total and internal energy fields.
        This is necessary because the interpolation introduces small

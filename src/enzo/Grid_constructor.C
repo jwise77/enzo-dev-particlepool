@@ -41,7 +41,8 @@ grid::grid()
   SubgridsAreStatic                     = FALSE;
   ProcessorNumber                       = ROOT_PROCESSOR;
 
-  SubgridFluxStorage = new fluxes* [1];
+  //  SubgridFluxStorage = new fluxes* [1];
+  fluxes *SubgridFluxStorage = NULL;
   NumberOfSubgrids = 1;
  
   /* clear MAX_DIMENSION vectors */
@@ -167,3 +168,5 @@ grid::grid()
   Stars = NULL;
 
 }
+
+

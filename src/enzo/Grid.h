@@ -12,6 +12,7 @@
 
 #ifndef GRID_DEFINED__
 #define GRID_DEFINED__
+
 #include "ProtoSubgrid.h"
 #include "ListOfParticles.h"
 #include "region.h"
@@ -56,6 +57,10 @@ struct HierarchyEntry;
 
 extern int CommunicationDirection;
 int FindField(int f, int farray[], int n);
+float *AllocateNewBaryonField(int size); 
+void FreeBaryonFieldMemory(float *BF);
+void FreeParticleMemory(void *BF);
+
 struct LevelHierarchyEntry;
 
 class grid
@@ -196,6 +201,21 @@ class grid
 /* Grid deconstructor (free up memory usage) */
 
    ~grid();
+
+
+   // Memory pool overloads new and delete operators
+#ifdef GRID_MEMORY_POOL
+void* operator new(size_t object_size)
+{
+  return GridObjectMemoryPool->GetMemory(object_size);
+}
+
+void operator delete(void* object)
+{
+  GridObjectMemoryPool->FreeMemory(object);
+  return;
+}
+#endif
 
 /* Read grid data from a file (returns: success/failure) */
 
@@ -898,6 +918,12 @@ public:
 
    void AllocateGrids();
 
+/* Defragment Baryon Memory Pool */
+   void DefragmentBaryonMemoryPool();
+
+/* Defragment Particle Memory Pool */
+   void DefragmentParticleMemoryPool();
+
 /* set the grid derived quantites (CellLeftEdge, CellWidth & BoundaryFluxes) */
 
    void PrepareGridDerivedQuantities();
@@ -990,7 +1016,7 @@ public:
 
    void CreateDensitySquaredField() {
      int size = GridDimension[0]*GridDimension[1]*GridDimension[2];
-     BaryonField[NumberOfBaryonFields] = new float[size];
+     BaryonField[NumberOfBaryonFields] = AllocateNewBaryonField(size);
      for (int i = 0; i < size; i++)
        BaryonField[NumberOfBaryonFields][i] = 
 	 BaryonField[0][i]*BaryonField[0][i];
@@ -1125,7 +1151,7 @@ public:
 /* Gravity: Delete GravitatingMassField. */
 
    void DeleteGravitatingMassField() {
-     delete [] GravitatingMassField; 
+     FreeBaryonFieldMemory(GravitatingMassField); 
      GravitatingMassField = NULL;
    };
 
@@ -1134,7 +1160,7 @@ public:
    void DeleteAccelerationField() {
      if (!((SelfGravity || UniformGravity || PointSourceGravity || ExternalGravity))) return;
      for (int dim = 0; dim < GridRank; dim++) {
-       delete [] AccelerationField[dim];
+       FreeBaryonFieldMemory(AccelerationField[dim]);
        AccelerationField[dim] = NULL;
      }
    };
@@ -1344,7 +1370,7 @@ public:
    void DeleteParticleAcceleration() {
      if (!((SelfGravity || UniformGravity || PointSourceGravity))) return;
      for (int dim = 0; dim < GridRank+ComputePotential; dim++) {
-       delete [] ParticleAcceleration[dim];
+       FreeParticleMemory(ParticleAcceleration[dim]);
        ParticleAcceleration[dim] = NULL;
      }
    };
@@ -1352,7 +1378,7 @@ public:
 /* Particles & Gravity: Delete GravitatingMassField. */
 
    void DeleteGravitatingMassFieldParticles() {
-     delete [] GravitatingMassFieldParticles; 
+     FreeBaryonFieldMemory(GravitatingMassFieldParticles); 
      GravitatingMassFieldParticles = NULL;
      GravitatingMassFieldParticlesCellSize = FLOAT_UNDEFINED;
    };
@@ -1370,36 +1396,67 @@ public:
 /* Particles: delete particle fields and set null. */
 
    void DeleteParticles() {
+#ifndef MEMORY_POOL 
      if (ParticleMass != NULL) delete [] ParticleMass;
      if (ParticleNumber != NULL) delete [] ParticleNumber;
      if (ParticleType != NULL) delete [] ParticleType;
+     for (int dim = 0; dim < GridRank; dim++) {
+       if (ParticlePosition[dim] != NULL) delete [] ParticlePosition[dim];
+       if (ParticleVelocity[dim] != NULL) delete [] ParticleVelocity[dim];
+     }
+     for (int i = 0; i < NumberOfParticleAttributes; i++) 
+       if (ParticleAttribute[i] != NULL) delete [] ParticleAttribute[i];
+#else
+     FreeParticleMemory((void*) ParticleMass);
+     FreeParticleMemory((void*)ParticleNumber);
+     FreeParticleMemory((void*)ParticleType);
+     for (int dim = 0; dim < GridRank; dim++) {
+       FreeParticleMemory((void*)ParticlePosition[dim]);
+       FreeParticleMemory((void*)ParticleVelocity[dim]);
+     }
+     for (int i = 0; i < NumberOfParticleAttributes; i++) 
+       FreeParticleMemory((void*)ParticleAttribute[i]);
+#endif
      ParticleMass = NULL;
      ParticleNumber = NULL;
      ParticleType = NULL;
      for (int dim = 0; dim < GridRank; dim++) {
-       if (ParticlePosition[dim] != NULL) delete [] ParticlePosition[dim];
-       if (ParticleVelocity[dim] != NULL) delete [] ParticleVelocity[dim];
        ParticlePosition[dim] = NULL;
        ParticleVelocity[dim] = NULL;
      }
-     for (int i = 0; i < NumberOfParticleAttributes; i++) {
-       if (ParticleAttribute[i] != NULL) delete [] ParticleAttribute[i];
+     for (int i = 0; i < NumberOfParticleAttributes; i++) 
        ParticleAttribute[i] = NULL;
-     }   
    };
 
 /* Particles: allocate new particle fields. */
 
    void AllocateNewParticles(int NumberOfNewParticles) {
+     // Allocate memory for particles
+#ifndef MEMORY_POOL
+     // classic: use system malloc to get memory
      ParticleMass = new float[NumberOfNewParticles];
      ParticleNumber = new PINT[NumberOfNewParticles];
      ParticleType = new int[NumberOfNewParticles];
-     for (int dim = 0; dim < GridRank; dim++) {
-       ParticlePosition[dim] = new FLOAT[NumberOfNewParticles];
-       ParticleVelocity[dim] = new float[NumberOfNewParticles];
-     }
-     for (int i = 0; i < NumberOfParticleAttributes; i++)
-       ParticleAttribute[i] = new float[NumberOfNewParticles];
+      for (int dim = 0; dim < GridRank; dim++) {
+	ParticlePosition[dim] = new FLOAT[NumberOfNewParticles];
+	ParticleVelocity[dim] = new float[NumberOfNewParticles];
+      }
+      for (int i = 0; i < NumberOfParticleAttributes; i++)
+	ParticleAttribute[i] = new float[NumberOfNewParticles];
+#else  
+      // use Particle Memory Pool to allocate memory
+      ParticleMass = static_cast<float*>(ParticleMemoryPool->GetMemory(sizeof(float)*NumberOfNewParticles));
+      ParticleNumber = static_cast<PINT*>(ParticleMemoryPool->GetMemory(sizeof(PINT)*NumberOfNewParticles));
+      ParticleType = static_cast<int*>(ParticleMemoryPool->GetMemory(sizeof(int)*NumberOfNewParticles));
+      for (int dim = 0; dim < GridRank; dim++) {
+	ParticlePosition[dim] = static_cast<FLOAT*>(ParticleMemoryPool->GetMemory(sizeof(FLOAT)*NumberOfNewParticles));
+	ParticleVelocity[dim] = static_cast<float*>(ParticleMemoryPool->GetMemory(sizeof(float)*NumberOfNewParticles));
+      }
+      for (int i = 0; i < NumberOfParticleAttributes; i++)
+	ParticleAttribute[i] = static_cast<float*>(ParticleMemoryPool->GetMemory(sizeof(float)*NumberOfNewParticles));
+#endif
+
+
    };
 
 /* Particles: Copy pointers passed into into grid. */
@@ -2439,7 +2496,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
     int i;
     for (i = 0; i < NumberOfBaryonFields; i++)
       if (InterpolatedField[i] != NULL) {
-	delete [] InterpolatedField[i];
+	FreeBaryonFieldMemory(InterpolatedField[i]);
 	InterpolatedField[i] = NULL;
       }
   }

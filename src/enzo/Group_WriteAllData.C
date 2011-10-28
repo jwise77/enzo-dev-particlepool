@@ -84,9 +84,8 @@ int CommunicationCombineGrids(HierarchyEntry *OldHierarchy,
 void DeleteGridHierarchy(HierarchyEntry *GridEntry);
 void ContinueExecution(void);
 int CreateSmoothedDarkMatterFields(TopGridData &MetaData, HierarchyEntry *TopGrid);
- 
-int CreateGriddedStarParticleFields(TopGridData &MetaData, HierarchyEntry *TopGrid); 
-
+int CreateGriddedStarParticleFields(TopGridData &MetaData, HierarchyEntry *TopGrid);
+void PrintMemoryUsage(char* string);
 #ifndef FAST_SIB
 int SetBoundaryConditions(HierarchyEntry *Grids[], int NumberOfGrids,
                           int level, TopGridData *MetaData,
@@ -124,18 +123,18 @@ int Group_WriteAllData(char *basename, int filenumber,
 		 int CheckpointDump = FALSE)
 {
  
-  char id[MAX_CYCLE_TAG_SIZE], *cptr, name[MAX_LINE_LENGTH];
-  char dumpdirname[MAX_LINE_LENGTH];
-  char dumpdirroot[MAX_LINE_LENGTH];
-  char unixcommand[MAX_LINE_LENGTH];
-  char gridbasename[MAX_LINE_LENGTH];
-  char hierarchyname[MAX_LINE_LENGTH];
-  char bhierarchyname[MAX_LINE_LENGTH];
-  char radiationname[MAX_LINE_LENGTH];
-  char taskmapname[MAX_LINE_LENGTH];
-  char memorymapname[MAX_LINE_LENGTH];
-  char configurename[MAX_LINE_LENGTH];
-  char groupfilename[MAX_LINE_LENGTH];
+  static char id[MAX_CYCLE_TAG_SIZE], *cptr, name[MAX_LINE_LENGTH];
+  static char dumpdirname[MAX_LINE_LENGTH];
+  static char dumpdirroot[MAX_LINE_LENGTH];
+  static char unixcommand[MAX_LINE_LENGTH];
+  static char gridbasename[MAX_LINE_LENGTH];
+  static char hierarchyname[MAX_LINE_LENGTH];
+  static char bhierarchyname[MAX_LINE_LENGTH];
+  static char radiationname[MAX_LINE_LENGTH];
+  static char taskmapname[MAX_LINE_LENGTH];
+  static char memorymapname[MAX_LINE_LENGTH];
+  static char configurename[MAX_LINE_LENGTH];
+  static char groupfilename[MAX_LINE_LENGTH];
  
   int unixresult;
   int status;
@@ -143,8 +142,8 @@ int Group_WriteAllData(char *basename, int filenumber,
   int file_status;
   int ii, pe, nn;
   double twrite0, twrite1;
-
-  char pid[MAX_TASK_TAG_SIZE];
+ 
+  static char pid[MAX_TASK_TAG_SIZE];
  
   FILE *fptr;
   FILE *sptr;
@@ -171,6 +170,7 @@ int Group_WriteAllData(char *basename, int filenumber,
 
   FLOAT SavedTime = MetaData.Time;
   MetaData.Time = ((WriteTime < 0) || (CheckpointDump == TRUE)) ? MetaData.Time : WriteTime;
+  PrintMemoryUsage("Enter Group_WriteAllData");
 
   // Global or local filesystem?
  
@@ -560,9 +560,10 @@ int Group_WriteAllData(char *basename, int filenumber,
  
   // Set MetaData.BoundaryConditionName
  
-  if (MetaData.BoundaryConditionName != NULL)
-    delete [] MetaData.BoundaryConditionName;
-  MetaData.BoundaryConditionName = new char[MAX_LINE_LENGTH];
+  //  if (MetaData.BoundaryConditionName != NULL)
+  //    delete [] MetaData.BoundaryConditionName;
+  if (MetaData.BoundaryConditionName == NULL)
+    MetaData.BoundaryConditionName = new char[MAX_LINE_LENGTH];
   strcpy(MetaData.BoundaryConditionName, name);
   strcat(MetaData.BoundaryConditionName, BCSuffix);
 
@@ -615,6 +616,7 @@ int Group_WriteAllData(char *basename, int filenumber,
     fclose(fptr);
   
   }
+  PrintMemoryUsage("After WriteParameterFile");
 
  
   // Output Boundary condition info
@@ -630,7 +632,8 @@ int Group_WriteAllData(char *basename, int filenumber,
     fclose(fptr);
  
   }
- 
+   PrintMemoryUsage("After write boundary");
+
   // Create hierarchy name and grid base name
  
   strcpy(hierarchyname, name);
@@ -696,6 +699,8 @@ int Group_WriteAllData(char *basename, int filenumber,
   if (Group_WriteDataHierarchy(fptr, MetaData, TempTopGrid,
             gridbasename, GridID, WriteTime, file_id, CheckpointDump) == FAIL)
     ENZO_FAIL("Error in Group_WriteDataHierarchy");
+
+   PrintMemoryUsage("After write hierarchy");
 
     hid_t metadata_group = H5Gcreate(file_id, "Metadata", 0);
     if(metadata_group == h5_error)ENZO_FAIL("Error writing metadata!");
@@ -872,6 +877,7 @@ int Group_WriteAllData(char *basename, int filenumber,
 	    name, MetaData.CycleNumber, MetaData.Time, twrite0, (twrite1-twrite0));
     fclose(sptr);
   }
+   PrintMemoryUsage("Done writing.");
  
   return SUCCESS;
 }

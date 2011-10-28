@@ -457,7 +457,7 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
       fprintf(log_fptr, "H5Fclose: %"ISYM"\n", h5_status);
       if( h5_status == h5_error ){my_exit(EXIT_FAILURE);}
  
-    delete temp;
+    delete [] temp;
  
     } // if cube is in active output list
  
@@ -606,8 +606,8 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
         fprintf(log_fptr, "H5Fclose: %"ISYM"\n", h5_status);
         if( h5_status == h5_error ){my_exit(EXIT_FAILURE);}
  
-      delete temperature;
-      delete temp;
+      delete [] temperature;
+      delete [] temp;
  
     } // end: if (ComovingCoordinates)
  
@@ -783,7 +783,7 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
  
     } // end of (if GravitatingMassFieldParticles != NULL)
  
-    delete temp;
+    delete [] temp;
  
     } // if output cube active
  
@@ -1018,7 +1018,7 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
  
     }
  
-    delete temp;
+    delete [] temp;
  
  
     // particle mass
@@ -1106,7 +1106,7 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
           fprintf(log_fptr, "H5Fclose: %"ISYM"\n", h5_status);
           if( h5_status == h5_error ){my_exit(EXIT_FAILURE);}
  
-    delete temp;
+    delete [] temp;
  
     } // if output cube active
  
@@ -1195,7 +1195,7 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
           fprintf(log_fptr, "H5Fclose: %"ISYM"\n", h5_status);
           if( h5_status == h5_error ){my_exit(EXIT_FAILURE);}
  
-    delete tempint;
+    delete [] tempint;
  
     } // if output cube active
  
@@ -1379,7 +1379,7 @@ int grid::WriteCube(char *base_name, int grid_id, int TGdims[])
  
     }
  
-    delete temp;
+    delete [] temp;
  
  
     } // end: if (MyProcessorNumber)

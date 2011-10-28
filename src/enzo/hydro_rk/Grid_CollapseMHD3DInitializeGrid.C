@@ -31,7 +31,6 @@ void Turbulence_Generator(float **vel, int dim0, int dim1, int dim2, int ind,
 			  float kmin, float kmax, float dk,
 			  FLOAT **LeftEdge, FLOAT **CellWidth, int seed);
 
-
 int grid::CollapseMHD3DInitializeGrid(int n_sphere,
 				      FLOAT r_sphere[MAX_SPHERES],
 				      FLOAT rc_sphere[MAX_SPHERES],
@@ -155,7 +154,7 @@ int grid::CollapseMHD3DInitializeGrid(int n_sphere,
   }
 
   for (dim = 0; dim < GridRank; dim++) {
-    TurbulenceVelocity[dim] = new float[activesize];
+    TurbulenceVelocity[dim] = AllocateNewBaryonField(activesize);
     for (int n = 0; n < activesize; n++) {
       TurbulenceVelocity[dim][n] = 0.0;
     }
@@ -164,7 +163,7 @@ int grid::CollapseMHD3DInitializeGrid(int n_sphere,
   int count=0;
   for (field = 0; field < NumberOfBaryonFields; field++) {
     if (BaryonField[field] == NULL) {
-      BaryonField[field] = new float[size];
+       BaryonField[field] = static_cast<float*>(AllocateNewBaryonField(size));
       for (i=0;i<size;i++)
 	BaryonField[field][i] = 0.;
       count++;

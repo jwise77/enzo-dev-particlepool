@@ -124,7 +124,7 @@ int grid::CoolingTestInitializeGrid()
 
   for (field = 0; field < NumberOfBaryonFields; field++)
     if (BaryonField[field] == NULL)
-      BaryonField[field] = new float[size];
+      BaryonField[field] = AllocateNewBaryonField(size);
 
   // Set up a 3d grid that varies over density, metallicity, and temperature.
   // Do density and metallicity first, and temperature later when species fractions are set.

@@ -43,7 +43,7 @@ int grid::AddFields(int TypesToAdd[], int NumberOfFields)
 	ENZO_VFAIL("BaryonField[%"ISYM"] already assigned?\n", n)
 
       }
-      BaryonField[n] = new float[size];
+      BaryonField[n] = AllocateNewBaryonField(size);
       value = (TypesToAdd[i] == SNColour || TypesToAdd[i] == Metallicity ||
 	       TypesToAdd[i] == MetalSNIaDensity) ? tiny_number : 0.0;
       for (j = 0; j < size; j++)

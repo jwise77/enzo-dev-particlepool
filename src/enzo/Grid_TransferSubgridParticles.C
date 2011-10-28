@@ -24,7 +24,10 @@
 #include "ExternalBoundary.h"
 #include "Grid.h"
 #include "Hierarchy.h"
- 
+void FreeBaryonFieldMemory(float *BF);
+void FreeFlaggingFieldMemory(int *BF);
+int *AllocateNewFlaggingField(int size);
+
 int grid::TransferSubgridParticles(grid* Subgrids[], int NumberOfSubgrids, 
 				   int* &NumberToMove, int StartIndex, 
 				   int EndIndex, particle_data* &List, 
@@ -52,7 +55,7 @@ int grid::TransferSubgridParticles(grid* Subgrids[], int NumberOfSubgrids,
     /* If there are no particles to move, we're done. */
 
     if (NumberOfParticles == 0) {
-      delete [] BaryonField[NumberOfBaryonFields];
+      FreeBaryonFieldMemory(BaryonField[NumberOfBaryonFields]);
       BaryonField[NumberOfBaryonFields] = NULL;
       return SUCCESS;
     }
@@ -80,7 +83,8 @@ int grid::TransferSubgridParticles(grid* Subgrids[], int NumberOfSubgrids,
     /* Count particles to move */
 
     int *subgrid = NULL;
-    subgrid = new int[NumberOfParticles];
+    //    subgrid = new int[NumberOfParticles];
+    subgrid = AllocateNewFlaggingField(NumberOfParticles);
 
     for (i = 0; i < NumberOfParticles; i++) {
 
@@ -117,7 +121,8 @@ int grid::TransferSubgridParticles(grid* Subgrids[], int NumberOfSubgrids,
     } // ENDFOR particles
 
     if (CountOnly == TRUE) {
-      delete [] subgrid;
+      //      delete [] subgrid;
+      FreeFlaggingFieldMemory(subgrid);
       return SUCCESS;
     }
 
@@ -178,8 +183,9 @@ int grid::TransferSubgridParticles(grid* Subgrids[], int NumberOfSubgrids,
 
     } // ENDIF particles to move
 
-    delete [] subgrid;
-    delete [] BaryonField[NumberOfBaryonFields];
+    //    delete [] subgrid;
+    FreeFlaggingFieldMemory(subgrid);
+    FreeBaryonFieldMemory(BaryonField[NumberOfBaryonFields]);
     BaryonField[NumberOfBaryonFields] = NULL;
 
   } // end: if (COPY_OUT)
@@ -212,15 +218,30 @@ int grid::TransferSubgridParticles(grid* Subgrids[], int NumberOfSubgrids,
  
     if (TotalNumberOfParticles > 0) {
 
-    Mass = new float[TotalNumberOfParticles];
-    Number = new PINT[TotalNumberOfParticles];
-    Type = new int[TotalNumberOfParticles];
-    for (dim = 0; dim < GridRank; dim++) {
-      Position[dim] = new FLOAT[TotalNumberOfParticles];
-      Velocity[dim] = new float[TotalNumberOfParticles];
-    }
-    for (i = 0; i < NumberOfParticleAttributes; i++)
-      Attribute[i] = new float[TotalNumberOfParticles];
+      // Allocate memory for particles
+#ifndef MEMORY_POOL
+      // classic: use system malloc to get memory
+      Mass = new float[TotalNumberOfParticles];
+      Number = new PINT[TotalNumberOfParticles];
+      Type = new int[TotalNumberOfParticles];
+      for (int dim = 0; dim < GridRank; dim++) {
+	Position[dim] = new FLOAT[TotalNumberOfParticles];
+	Velocity[dim] = new float[TotalNumberOfParticles];
+      }
+      for (int i = 0; i < NumberOfParticleAttributes; i++)
+	Attribute[i] = new float[TotalNumberOfParticles];
+#else  
+      // use Particle Memory Pool to allocate memory
+      Mass = static_cast<float*>(ParticleMemoryPool->GetMemory(sizeof(float)*TotalNumberOfParticles));
+      Number = static_cast<PINT*>(ParticleMemoryPool->GetMemory(sizeof(PINT)*TotalNumberOfParticles));
+      Type = static_cast<int*>(ParticleMemoryPool->GetMemory(sizeof(int)*TotalNumberOfParticles));
+      for (int dim = 0; dim < GridRank; dim++) {
+	Position[dim] = static_cast<FLOAT*>(ParticleMemoryPool->GetMemory(sizeof(FLOAT)*TotalNumberOfParticles));
+	Velocity[dim] = static_cast<float*>(ParticleMemoryPool->GetMemory(sizeof(float)*TotalNumberOfParticles));
+      }
+      for (int i = 0; i < NumberOfParticleAttributes; i++)
+	Attribute[i] = static_cast<float*>(ParticleMemoryPool->GetMemory(sizeof(float)*TotalNumberOfParticles));
+#endif
 
     if (Velocity[GridRank-1] == NULL && TotalNumberOfParticles != 0) {
       fprintf(stderr, "malloc error (out of memory?)\n");

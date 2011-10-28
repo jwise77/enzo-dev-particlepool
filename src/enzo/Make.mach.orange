@@ -65,7 +65,8 @@ MACH_LD_NOMPI  = icc
 # Machine-dependent defines
 #-----------------------------------------------------------------------
 
-MACH_DEFINES = -DLINUX -DH5_USE_16_API -DEMBEDDED_PYTHON -DNO_IO_LOG -DMEM_TRACE
+#MACH_DEFINES = -DLINUX -DH5_USE_16_API -DMEM_TRACE -DMEMORY_POOL -DDEBUG_MPI
+MACH_DEFINES = -DLINUX -DH5_USE_16_API -DEMBEDDED_PYTHON -DNO_IO_LOG -DMEM_TRACE -DMEMORY_POOL
 #MACH_DEFINES = -DLINUX -DH5_USE_16_API -DEMBEDDED_PYTHON -DNO_IO_LOG 
 
 #-----------------------------------------------------------------------

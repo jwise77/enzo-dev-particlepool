@@ -9,7 +9,7 @@
 /  PURPOSE:
 /
 ************************************************************************/
- 
+
 //
 //  Grid destructor
 //
@@ -32,6 +32,7 @@ void DeleteStarList(Star * &Node);
 #ifdef TRANSFER
 PhotonPackageEntry*  DeletePhotonPackage(PhotonPackageEntry *PP);
 #endif /* TRANSFER */
+void FreeFlaggingFieldMemory(int *FF);
  
 grid::~grid()
 {
@@ -49,28 +50,28 @@ grid::~grid()
 #endif /* UNUSED */
  
   for (i = 0; i < MAX_DIMENSION; i++) {
-    delete [] CellLeftEdge[i];
-    delete [] CellWidth[i];
-    delete [] ParticlePosition[i];
-    delete [] ParticleVelocity[i];
-    delete [] ParticleAcceleration[i];
-    delete [] AccelerationField[i];
+    FreeParticleMemory(CellLeftEdge[i]);
+    FreeParticleMemory(CellWidth[i]);
+    FreeParticleMemory(ParticlePosition[i]);
+    FreeParticleMemory(ParticleVelocity[i]);
+    FreeParticleMemory(ParticleAcceleration[i]);
+    FreeBaryonFieldMemory(AccelerationField[i]);
     delete [] RandomForcingField[i];
   }
  
-  delete ParticleAcceleration[MAX_DIMENSION];
+  FreeParticleMemory(ParticleAcceleration[MAX_DIMENSION]);
  
   for (i = 0; i < MAX_NUMBER_OF_BARYON_FIELDS; i++) {
-    delete [] BaryonField[i];
-    delete [] OldBaryonField[i];
-    delete [] InterpolatedField[i];
+    FreeBaryonFieldMemory(BaryonField[i]);
+    FreeBaryonFieldMemory(OldBaryonField[i]);
+    FreeBaryonFieldMemory(InterpolatedField[i]);
   }
    delete [] YT_TemperatureField;
 
 #ifdef SAB
   for (i = 0; i < MAX_DIMENSION; i++) {
     if(OldAccelerationField[i] != NULL ){
-      delete [] OldAccelerationField[i];
+      FreeBaryonFieldMemory(OldAccelerationField[i]);
       OldAccelerationField[i] = NULL;
     }
   }
@@ -79,22 +80,22 @@ grid::~grid()
   DeleteFluxes(BoundaryFluxes);
   delete BoundaryFluxes;
  
-  delete [] ParticleMass;
-  delete [] ParticleNumber;
-  delete [] ParticleType;
-  delete [] PotentialField;
-  delete [] GravitatingMassField;
-  delete [] GravitatingMassFieldParticles;
-  delete [] FlaggingField;
-  delete [] MassFlaggingField;
-  delete [] ParticleMassFlaggingField;
+  FreeParticleMemory(ParticleMass);
+  FreeParticleMemory(ParticleNumber);
+  FreeParticleMemory(ParticleType);
+  FreeBaryonFieldMemory(PotentialField);
+  FreeBaryonFieldMemory(GravitatingMassField);
+  FreeBaryonFieldMemory(GravitatingMassFieldParticles);
+  FreeFlaggingFieldMemory(FlaggingField);
+  FreeBaryonFieldMemory(MassFlaggingField);
+  FreeBaryonFieldMemory(ParticleMassFlaggingField);
  
   for (i = 0; i < MAX_NUMBER_OF_PARTICLE_ATTRIBUTES; i++)
-    delete [] ParticleAttribute[i];
+    FreeParticleMemory(ParticleAttribute[i]);
 
-  delete divB;
+  FreeBaryonFieldMemory(divB);
   for (int i=0; i<3; i++) {
-    delete gradPhi[i];
+    FreeBaryonFieldMemory(gradPhi[i]);
   }
 
 

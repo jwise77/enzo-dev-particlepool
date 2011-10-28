@@ -689,10 +689,10 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
 
 
       if(GridRank==3){
-	delete curlx;
-	delete curly;}
-      delete curlz;
-      delete div;
+	delete [] curlx;
+	delete [] curly;}
+      delete [] curlz;
+      delete [] div;
     }
 
 
@@ -920,7 +920,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
       if (io_log) fprintf(log_fptr, "H5Dclose: %"ISYM"\n", h5_status);
       if( h5_status == h5_error ){my_exit(EXIT_FAILURE);}
  
-      delete [] InterpolatedField[field];
+      FreeBaryonFieldMemory(InterpolatedField[field]);
       InterpolatedField[field] = NULL;
 
     } // ENDFOR field
@@ -996,7 +996,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
       if (io_log) fprintf(log_fptr, "H5Dclose: %"ISYM"\n", h5_status);
       if( h5_status == h5_error ){my_exit(EXIT_FAILURE);}
  
-      delete [] InterpolatedField[field];
+      FreeBaryonFieldMemory(InterpolatedField[field]);
       InterpolatedField[field] = NULL;
 
     } // ENDFOR field

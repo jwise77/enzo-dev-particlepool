@@ -24,38 +24,36 @@
  
 /* function prototypes */
  
- 
 void grid::CleanUp()
 {
  
-  int i;
  
-  for (i = 0; i < MAX_DIMENSION; i++) {
-    delete [] ParticleAcceleration[i];
-//    delete [] AccelerationField[i];
+  for (int dim = 0; dim < MAX_DIMENSION; dim++) {
+    FreeParticleMemory(ParticleAcceleration[dim]);
+    FreeBaryonFieldMemory(AccelerationField[dim]);
  
-    ParticleAcceleration[i]      = NULL;
-//    AccelerationField[i]         = NULL;
+    ParticleAcceleration[dim]      = NULL;
+    AccelerationField[dim]         = NULL;
   }
-  delete [] ParticleAcceleration[MAX_DIMENSION];
+  FreeParticleMemory(ParticleAcceleration[MAX_DIMENSION]);
   ParticleAcceleration[MAX_DIMENSION] = NULL;
  
-  for (i = 0; i < MAX_NUMBER_OF_BARYON_FIELDS; i++) {
-    delete [] OldBaryonField[i];
+  for (int i = 0; i < MAX_NUMBER_OF_BARYON_FIELDS; i++) {
+    FreeBaryonFieldMemory(OldBaryonField[i]);
     OldBaryonField[i] = NULL;
   }
  
-  delete [] GravitatingMassField;
-  delete [] GravitatingMassFieldParticles;
+  FreeBaryonFieldMemory(GravitatingMassField);
+  FreeBaryonFieldMemory(GravitatingMassFieldParticles);
  
   GravitatingMassField          = NULL;
   GravitatingMassFieldParticles = NULL;
 
 #ifdef SAB
-  for (i = 0; i < MAX_DIMENSION; i++)
-    if (OldAccelerationField[i] != NULL) {
-      delete [] OldAccelerationField[i];
-      OldAccelerationField[i] = NULL;
+  for (int dim = 0; dim < MAX_DIMENSION; dim++)
+    if (OldAccelerationField[dim] != NULL) {
+      FreeBaryonFieldMemory(OldAccelerationField[dim]);
+      OldAccelerationField[dim] = NULL;
     }
 #endif
 

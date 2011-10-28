@@ -78,8 +78,8 @@ int grid::PreparePotentialField(grid *ParentGrid)
   if (MyProcessorNumber == ProcessorNumber &&
       CommunicationDirection != COMMUNICATION_POST_RECEIVE) {
     if (PotentialField != NULL)
-      delete [] PotentialField;
-    PotentialField = new float[size];
+      FreeBaryonFieldMemory(PotentialField);
+    PotentialField = AllocateNewBaryonField(size);
   }
  
   /* Declarations. */
@@ -158,8 +158,8 @@ int grid::PreparePotentialField(grid *ParentGrid)
   int size2 = GravitatingMassFieldDimension[0] *
               GravitatingMassFieldDimension[1] *
               (GravitatingMassFieldDimension[2]/Refinement[2] + 2);
-  float *Temp1 = new float[size1];
-  float *Temp2 = new float[size2];
+  float *Temp1 = AllocateNewBaryonField(size1);
+  float *Temp2 = AllocateNewBaryonField(size2);
  
   FORTRAN_NAME(int_spline)(ParentGrid->PotentialField,
 			   PotentialField, &GridRank,
@@ -171,8 +171,9 @@ int grid::PreparePotentialField(grid *ParentGrid)
 			   Refinement, Refinement+1, Refinement+2,
 			   Temp1, Temp2);
  
-  delete [] Temp1;
-  delete [] Temp2;
+  FreeBaryonFieldMemory(Temp1);
+  FreeBaryonFieldMemory(Temp2);
+
  
 #else /* SPLINE */
  
@@ -205,8 +206,7 @@ int grid::PreparePotentialField(grid *ParentGrid)
   /* Clean up parent. */
  
   if (MyProcessorNumber != ParentGrid->ProcessorNumber) {
-
-    delete [] ParentGrid->PotentialField;
+    FreeBaryonFieldMemory(ParentGrid->PotentialField);
     ParentGrid->PotentialField = NULL;
   }
  

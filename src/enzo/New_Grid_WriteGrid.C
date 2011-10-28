@@ -239,7 +239,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
  
     /* create temporary buffer */
  
-    temp = new float[size];
+    temp = AllocateNewBaryonField(size);
  
     /* 2c) Loop over fields, writing each one. */
  
@@ -366,8 +366,8 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
  
       /* Allocate field and compute temperature. */
  
-      temperature = new float[size];
- 
+      temperature = AllocateNewBaryonField(size);
+
       if (this->ComputeTemperatureField(temperature) == FAIL) {
 		ENZO_FAIL("Error in grid->ComputeTemperatureField.");
       }
@@ -379,7 +379,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
  
       // If outputing dust temperature, keep temperature field for the calculation.
       if (!OutputDustTemperature) {
-	delete [] temperature;
+	FreeBaryonFieldMemory(temperature);
       }
  
     } // end: if (OutputTemperature)
@@ -392,7 +392,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
       /* Get temperature field if we do not already have it. */
 
       if (!OutputTemperature) {
-	temperature = new float[size];
+	temperature = AllocateNewBaryonField(size);
 
 	if (this->ComputeTemperatureField(temperature) == FAIL) {
 	  ENZO_FAIL("Error in grid->ComputeTemperatureField.\n");
@@ -401,7 +401,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
 
       /* Allocate field and compute temperature. */
  
-      dust_temperature = new float[size];
+      dust_temperature = AllocateNewBaryonField(size);
  
       if (this->ComputeDustTemperatureField(temperature,
 					    dust_temperature) == FAIL) {
@@ -415,9 +415,9 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
  
       // If outputing dust temperature, keep temperature field for the calculation.
       if (!OutputTemperature) {
-	delete [] temperature;
+	FreeBaryonFieldMemory(temperature);
       }
-      delete [] dust_temperature;
+      FreeBaryonFieldMemory(dust_temperature);
  
     } // end: if (OutputDustTemperature)
 
@@ -425,7 +425,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
  
       /* Allocate field and compute cooling time. */
 
-      cooling_time = new float[size];
+      cooling_time = AllocateNewBaryonField(size);
  
       float TemperatureUnits = 1, DensityUnits = 1, LengthUnits = 1,
 	VelocityUnits = 1, TimeUnits = 1, aUnits = 1;
@@ -445,7 +445,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
       this->write_dataset(GridRank, OutDims, "Cooling_Time",
                     group_id, file_type_id, (VOIDP) cooling_time, TRUE, temp);
  
-      delete [] cooling_time;
+      FreeBaryonFieldMemory(cooling_time);
  
     } // if (OutputCoolingTime)
 
@@ -505,7 +505,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
 
     } // ENDIF !OutputSmoothedDarkMatter
 
-    delete [] temp;
+    FreeBaryonFieldMemory(temp);
  
     /* Write BoundaryFluxes info (why? it's just recreated when the grid
                                   is read in) */
@@ -524,7 +524,8 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
       active_size *= ActiveDim[dim];
     }
  
-    temp = new float[active_size];
+    //    temp = new float[active_size];
+    temp = AllocateNewBaryonField(active_size);
 
     int NumberOfDMFields;
     switch (OutputSmoothedDarkMatter) {
@@ -540,12 +541,12 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
       this->write_dataset(GridRank, OutDims, SmoothedDMLabel[field],
                     group_id, file_type_id, (VOIDP) InterpolatedField[field], FALSE);
 
-      delete [] InterpolatedField[field];
+      FreeBaryonFieldMemory(InterpolatedField[field]);
       InterpolatedField[field] = NULL;
 
     } // ENDFOR field
 
-    delete [] temp;
+    FreeBaryonFieldMemory(temp);
       
   } // ENDIF OutputSmoothedDarkMatter
  
@@ -561,9 +562,11 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
     else
       this->SortParticlesByNumber();
 
-    /* Create a temporary buffer (64 bit). */
+    /* Create a temporary buffer (32 bit). */
 
-    temp = new float[NumberOfParticles];
+    //    temp = new float[NumberOfParticles];
+    temp = AllocateNewBaryonField(NumberOfParticles);
+
 
     /* "128-bit" particle positions are stored as what HDF5 calls
        'native long double.' */
@@ -632,7 +635,7 @@ int grid::Group_WriteGrid(FILE *fptr, char *base_name, int grid_id, HDF5_hid_t f
 
     /* clean up */
 
-    delete [] temp;
+    FreeBaryonFieldMemory(temp);
 
   } // end: if (NumberOfParticles > 0)
  

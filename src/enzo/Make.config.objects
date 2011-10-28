@@ -19,6 +19,8 @@ OBJS_CONFIG_LIB = \
         AdiabaticExpansionInitialize.o \
         AdjustRefineRegion.o \
         AdjustMustRefineParticlesRefineToLevel.o \
+	AllocateMemoryPools.o \
+	AllocateNewBaryonField.o \
         AMRH5writer.o \
         AnalysisBaseClass.o \
         AnalysisBaseClass_HDF5Utils.o \
@@ -121,6 +123,7 @@ OBJS_CONFIG_LIB = \
         CreateSmoothedDarkMatterFields.o \
         CreateSUBlingList.o \
         CreateFluxes.o \
+	DefragmentMemoryPools.o \
         DeleteFluxes.o \
         DeleteSUBlingList.o \
         DepositBaryons.o \
@@ -380,6 +383,8 @@ OBJS_CONFIG_LIB = \
 	Grid_CreateFieldArray.o \
 	Grid_CreateParticleTypeGrouping.o \
 	Grid_DebugCheck.o \
+	Grid_DefragmentBaryonMemoryPool.o \
+	Grid_DefragmentParticleMemoryPool.o \
 	Grid_DeleteAllButParticles.o \
 	Grid_DeleteAllFields.o \
 	Grid_DeleteBaryonFields.o \

@@ -65,7 +65,7 @@ int grid::CopyBaryonFieldToOldBaryonField()
     /* Create OldBaryonField if necessary. */
  
     if ((OldBaryonField[field] == NULL))
-      OldBaryonField[field] = new float[size];
+      OldBaryonField[field] = AllocateNewBaryonField(size);      
  
     /* Copy. */
  
@@ -87,7 +87,7 @@ int grid::CopyBaryonFieldToOldBaryonField()
 
       if(AccelerationField[field] != NULL) {
         if( OldAccelerationField[field] == NULL ) {
-          OldAccelerationField[field] = new float[size];
+          OldAccelerationField[field] = AllocateNewBaryonField(size);
         }
         for(i=0;i<size;i++) {
           OldAccelerationField[field][i] = AccelerationField[field][i];

@@ -20,7 +20,8 @@
 #ifdef USE_MPI
 #include "mpi.h"
 #endif /* USE_MPI */
- 
+
+#include <sys/malloc.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -55,9 +56,12 @@
 int InitializePythonInterface(int argc, char **argv);
 int FinalizePythonInterface();
 #endif
-
+#ifdef USE_JEMALLOC
+#include "jemalloc/jemalloc.h"
+#endif
 // Function prototypes
- 
+void AllocateMemoryPools() ;
+   
 int InitializeNew(  char *filename, HierarchyEntry &TopGrid, TopGridData &tgd,
 		    ExternalBoundary &Exterior, float *Initialdt);
 int InitializeMovieFile(TopGridData &MetaData, HierarchyEntry &TopGrid);
@@ -178,9 +182,6 @@ int CommunicationInitialize(Eint32 *argc, char **argv[]);
 int CommunicationFinalize();
 
 int CommunicationPartitionGrid(HierarchyEntry *Grid, int gridnum);
-int CommunicationCombineGrids(HierarchyEntry *OldHierarchy,
-			      HierarchyEntry **NewHierarchyPointer,
-			      FLOAT WriteTime);
 void DeleteGridHierarchy(HierarchyEntry *GridEntry);
 int OutputPotentialFieldOnly(char *ParameterFile,
 			     LevelHierarchyEntry *LevelArray[], 
@@ -251,6 +252,17 @@ Eint32 MAIN_NAME(Eint32 argc, char *argv[])
 
 
   int i;
+#ifdef USE_JEMALLOC
+unsigned narena=0;
+size_t len=0;
+len = sizeof(narena);
+mallctl("arenas.purge", &narena, &len, NULL, 0);
+#endif
+
+#if 0
+ int dummy = mallopt(M_TRIM_THRESHOLD, 1024*1024); // 1 Mbyte chunks are released back
+ int dummy = mallopt(M_MMAP_THRESHOLD, 1024); // >1 kbyte chunks are allocated using mmap
+#endif
 
   // Initialize Communications
 
@@ -258,29 +270,20 @@ Eint32 MAIN_NAME(Eint32 argc, char *argv[])
 
   //#define DEBUG_MPI
 #ifdef DEBUG_MPI
-  if (MyProcessorNumber == ROOT_PROCESSOR) {
     int impi = 0;
     char hostname[256];
     gethostname(hostname, sizeof(hostname));
-    printf("PID %d on %s ready for debugger attach\n", getpid(), hostname);
+    //    if (MyProcessorNumber == ROOT_PROCESSOR) 
+    //   printf("PID %d on %s ready for debugger attach\n", getpid(), hostname);
+    printf("xterm -e gdb --pid %d  &   ", getpid());
     fflush(stdout);
-    while (impi == 0)
-      sleep(5);
-  }
+    sleep(8.1);
 #endif
   
 
   int int_argc;
   int_argc = argc;
  
- //  if (MyProcessorNumber == ROOT_PROCESSOR &&
-//       ENZO_SVN_REVISION != 0) {
-//     printf("=========================\n");
-//     printf("Enzo SVN Branch   %s\n",ENZO_SVN_BRANCH);
-//     printf("Enzo SVN Revision %s\n",ENZO_SVN_REVISION);
-//     printf("=========================\n");
-//     fflush(stdout);
-//   }
   // Performance Monitoring
 
 #ifdef USE_MPI
@@ -307,20 +310,10 @@ Eint32 MAIN_NAME(Eint32 argc, char *argv[])
 #ifdef TASKMAP
   GetNodeFreeMemory();
 #endif
+  
+  // setup memory pools 
 
-  /* The initial size of the memory pool in units of photon packages.
-     Increase the memory pool by 1/4th of the initial size as more
-     memory is needed. */
-
-#ifdef TRANSFER
-#ifdef MEMORY_POOL
-  const int PhotonMemorySize = MEMORY_POOL_SIZE;
-  int PhotonSize = sizeof(PhotonPackageEntry);
-  PhotonMemoryPool = new MPool::MemoryPool(PhotonMemorySize*PhotonSize,
-					   PhotonSize,
-					   PhotonMemorySize*PhotonSize/4);
-#endif
-#endif
+  AllocateMemoryPools();
 
   // Begin 
 
@@ -842,6 +835,20 @@ Eint32 MAIN_NAME(Eint32 argc, char *argv[])
 #ifdef FLOW_TRACE
     fclose(flow_trace_fptr);
 #endif
+
+#ifdef MEMORY_POOL
+    delete GridObjectMemoryPool;
+    delete ProtoSubgridMemoryPool;
+    delete HierarchyEntryMemoryPool;
+    delete FlaggingFieldMemoryPool;
+    delete ParticleMemoryPool;
+    delete BaryonFieldMemoryPool;
+#ifdef TRANSFER
+    delete PhotonMemoryPool;
+#endif
+#endif
+    PrintMemoryUsage("Just before calling exit:");
+
  
   my_exit(EXIT_SUCCESS);
  

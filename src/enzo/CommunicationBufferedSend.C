@@ -25,6 +25,8 @@
 #include "typedefs.h"
 #include "global_data.h" 
 void my_exit(int status);
+
+
 /* Records the number of times we've been called. */
  
 static int CallCount = 0;
@@ -40,9 +42,11 @@ static int CallCount = 0;
 static MPI_Request  RequestHandle[MAX_NUMBER_OF_MPI_BUFFERS];
 static char        *RequestBuffer[MAX_NUMBER_OF_MPI_BUFFERS];
 static int          LastActiveIndex = -1;
- 
- 
+
 /* function prototypes */
+void FreeBaryonFieldMemory(float *BF);
+void FreeParticleMemory(void *PF);
+
 
 int CommunicationBufferPurge(void) { 
 
@@ -68,7 +72,22 @@ int CommunicationBufferPurge(void) {
 
 	//fprintf(stderr,"CCO p%"ISYM": mem- thread %"ISYM" finished\n",MyProcessorNumber, i);
 	
+
+
+#ifdef MEMORY_POOL
+	int stag = Status.MPI_TAG;
+	if (((stag >= MPI_SENDPARTFIELD_TAG) && (stag >= MPI_SENDPARTFIELD_TAG+5))
+	    || (stag ==  MPI_TRANSPOSE_TAG) || (stag == 0) || (stag == MPI_SENDREGION_TAG) ||
+	    (stag == MPI_FLUX_TAG))
+	  FreeBaryonFieldMemory((float*) RequestBuffer[i]);
+	else if ((stag ==  MPI_TRANSFERPARTICLE_TAG) || (stag == MPI_SENDPARTFLOAT_TAG) ||
+		 (stag == MPI_SENDPART_TAG) )
+	  FreeParticleMemory((void*) RequestBuffer[i]);
+	else
+	  delete [] RequestBuffer[i];
+#else
 	delete [] RequestBuffer[i];
+#endif
 	RequestBuffer[i] = NULL;
         BuffersPurged++;
         //fprintf(stderr, "CBP buffer %"ISYM" released\n", i);
@@ -150,14 +169,28 @@ int CommunicationBufferedSend(void *buffer, int size, MPI_Datatype Type, int Tar
     for (i = 0; i < LastActiveIndex+1; i++) {
       if (RequestBuffer[i] != NULL) {
 	stat = MPI_Test(RequestHandle+i, &RequestDone, &Status);
-          if( stat != MPI_SUCCESS ){my_exit(EXIT_FAILURE);}
+	if( stat != MPI_SUCCESS ){my_exit(EXIT_FAILURE);}
 	if (RequestDone) {
- 
+	  
 	  /* If the request is done, deallocate associated buffer. */
- 
+	  
+#ifdef MEMORY_POOL
+	int stag = Status.MPI_TAG;
+	if (((stag >= MPI_SENDPARTFIELD_TAG) && (stag >= MPI_SENDPARTFIELD_TAG+5))
+	    || (stag ==  MPI_TRANSPOSE_TAG) || (stag == 0) || (stag == MPI_SENDREGION_TAG) ||
+	    (stag == MPI_FLUX_TAG))
+	  FreeBaryonFieldMemory((float*) RequestBuffer[i]);
+	else if ((stag ==  MPI_TRANSFERPARTICLE_TAG) || (stag == MPI_SENDPARTFLOAT_TAG) ||
+		 (stag == MPI_SENDPART_TAG) )
+	  FreeParticleMemory((void*) RequestBuffer[i]);
+	else
 	  delete [] RequestBuffer[i];
+#else
+	  delete [] RequestBuffer[i];
+#endif
+	  
 	  RequestBuffer[i] = NULL;
- 
+	  
 	} else
 	  NewLastActiveIndex = max(i, NewLastActiveIndex);
       }

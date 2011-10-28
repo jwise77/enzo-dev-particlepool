@@ -345,7 +345,7 @@ int EvolveLevel_RK2(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
 
 
     When = 0.5;
-//    RK2SecondStepBaryonDeposit = 1;  
+
     if (SelfGravity) {
 #ifdef FAST_SIB
       PrepareDensityField(LevelArray, SiblingList, level, MetaData, When);
@@ -425,7 +425,7 @@ int EvolveLevel_RK2(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
     // Recompute potential and accelerations with time centered baryon Field
     // this also does the particles again at the moment so could be made more efficient.
 
-    RK2SecondStepBaryonDeposit = 1; // set this to (0/1) to (not use/use) this extra step  //#####
+      // // set this to (0/1) to (not use/use) this extra step  in Grid_BaryonDeposit
     //    printf("SECOND STEP\n");
     if (RK2SecondStepBaryonDeposit && SelfGravity && UseHydro) {  
       When = 0.5;
@@ -489,10 +489,6 @@ int EvolveLevel_RK2(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
       if (UseViscosity) 
 	Grids[grid1]->GridData->AddViscosity();
 
-      /* If using comoving co-ordinates, do the expansion terms now. */
-      if (ComovingCoordinates)
-	Grids[grid1]->GridData->ComovingExpansionTerms();
-
       } // ENDIF UseHydro
 
 
@@ -525,12 +521,13 @@ int EvolveLevel_RK2(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
 
       Grids[grid1]->GridData->DeleteParticleAcceleration();
  
+
       if (UseFloor) 
 	Grids[grid1]->GridData->SetFloor();
 
     }  // end loop over grids
 
-    if (UseDivergenceCleaning != 0){
+    if (UseDivergenceCleaning != 0) {
 
 #ifdef FAST_SIB
       SetBoundaryConditions(Grids, NumberOfGrids, SiblingList, level, MetaData, Exterior, LevelArray[level]);
@@ -541,13 +538,20 @@ int EvolveLevel_RK2(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
       for (grid1 = 0; grid1 < NumberOfGrids; grid1++) 
 	Grids[grid1]->GridData->PoissonSolver(level);
     
-    }
-    
+
 #ifdef FAST_SIB
     SetBoundaryConditions(Grids, NumberOfGrids, SiblingList, level, MetaData, Exterior, LevelArray[level]);
 #else
     SetBoundaryConditions(Grids, NumberOfGrids, level, MetaData, Exterior, LevelArray[level]);
 #endif
+
+    } // UseDivergenceCleaning ? 
+
+      /* If using comoving co-ordinates, do the expansion terms now. */
+    if (ComovingCoordinates)
+      for (grid1 = 0; grid1 < NumberOfGrids; grid1++) 
+	Grids[grid1]->GridData->ComovingExpansionTerms();
+    
 
     /* Finalize (accretion, feedback, etc.) star particles */
  

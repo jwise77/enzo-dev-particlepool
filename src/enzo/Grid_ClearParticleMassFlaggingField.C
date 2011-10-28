@@ -29,7 +29,8 @@ void grid::ClearParticleMassFlaggingField()
  
   if (ParticleMassFlaggingField != NULL) {
     fprintf(stderr, "ClearParticleMassFlaggingField: Warning, field not deleted.\n");
-    delete [] ParticleMassFlaggingField;
+    FreeBaryonFieldMemory(ParticleMassFlaggingField);
+    ParticleMassFlaggingField = NULL;
   }
  
   /* compute size and allocate */
@@ -38,7 +39,7 @@ void grid::ClearParticleMassFlaggingField()
   for (dim = 0; dim < GridRank; dim++)
     size *= GridDimension[dim];
  
-  ParticleMassFlaggingField = new float[size];
+  ParticleMassFlaggingField = AllocateNewBaryonField(size);
  
   /* Clear it */
  
