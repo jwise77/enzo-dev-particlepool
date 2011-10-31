@@ -52,15 +52,15 @@ void AllocateMemoryPools()
 						   HierarchyEntrySize,
 						   HierarchyEntryMemorySize*HierarchyEntrySize, true);
 #endif
-  FlaggingFieldMemoryPool = new MPool::MemoryPool(4, sizeof(int)*1024*1024/CoresPerNode,
+  FlaggingFieldMemoryPool = new MPool::MemoryPool(4, sizeof(int)*1024*1024/max(CoresPerNode,1),
 						  sizeof(int)*32,
 						  sizeof(int)*200000, true);
   
-  ParticleMemoryPool = new MPool::MemoryPool(5, sizeof(FLOAT)*4000000/CoresPerNode,
+  ParticleMemoryPool = new MPool::MemoryPool(5, sizeof(FLOAT)*4000000/max(1,CoresPerNode),
 					     sizeof(FLOAT)*64,
 					     sizeof(FLOAT)*2000000, true);
   
-  BaryonFieldMemoryPool = new MPool::MemoryPool(6, sizeof(float)*24000000/CoresPerNode,
+  BaryonFieldMemoryPool = new MPool::MemoryPool(6, sizeof(float)*24000000/max(1,CoresPerNode),
 						sizeof(float)*64,
 						sizeof(float)*6000000, true);
 
