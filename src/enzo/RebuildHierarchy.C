@@ -217,7 +217,7 @@ int RebuildHierarchy(TopGridData *MetaData,
       } // end: if grid pointer valid
  
   } // end: loop over levels
-  tt1 = ReturnWallTime();
+   tt1 = ReturnWallTime();
   RHperf[0] += tt1-tt0;
 
 
@@ -230,9 +230,11 @@ int RebuildHierarchy(TopGridData *MetaData,
   if (level > MaximumStaticSubgridLevel) {
     ParticlesAreLocal = false;
     SyncNumberOfParticles = false;
+    PrintMemoryUsage("RH: before CommunicationCollectParticles");
     CommunicationCollectParticles(LevelArray, level, ParticlesAreLocal, 
 				  SyncNumberOfParticles, MoveStars,
 				  SIBLINGS_ONLY);
+    PrintMemoryUsage("RH: after CommunicationCollectParticles");
     ParticlesAreLocal = true;
     SyncNumberOfParticles = true;
   }

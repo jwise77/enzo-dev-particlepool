@@ -65,8 +65,8 @@ int CommunicationCollectParticles(LevelHierarchyEntry *LevelArray[],
   /* Create pointer arrays and count grids */
 
   int NumberOfGrids = 0, NumberOfSubgrids = 0;
-  HierarchyEntry *SubgridHierarchyPointer[MAX_NUMBER_OF_SUBGRIDS];
-  HierarchyEntry *GridHierarchyPointer[MAX_NUMBER_OF_SUBGRIDS];
+  static HierarchyEntry *SubgridHierarchyPointer[MAX_NUMBER_OF_SUBGRIDS];
+  static HierarchyEntry *GridHierarchyPointer[MAX_NUMBER_OF_SUBGRIDS];
   HierarchyEntry *Subgrid;
   LevelHierarchyEntry *Temp;
 
@@ -427,7 +427,13 @@ int CommunicationCollectParticles(LevelHierarchyEntry *LevelArray[],
 
     /* Count the number of particles needed to move */
 
+#ifndef MEMORY_POOL
     SendList = new particle_data[TotalNumberToMove];
+#else
+    SendList = 
+      static_cast<particle_data*>(ParticleMemoryPool->GetMemory
+				  (sizeof(particle_data)*TotalNumberToMove));
+#endif
     StarSendList = new star_data[TotalStarsToMove];
 
     for (i = 0; i < NumberOfProcessors; i++) {
@@ -525,12 +531,11 @@ int CommunicationCollectParticles(LevelHierarchyEntry *LevelArray[],
     /* Cleanup. */
 
     if (SendList != SharedList)
-      delete [] SendList;
-    delete [] SharedList;
-
+      FreeParticleMemory(SharedList);
+    FreeParticleMemory(SendList);
     if (StarSendList != StarSharedList)
-      delete [] StarSendList;
-    delete [] StarSharedList;
+      delete[] StarSendList;
+    delete[] StarSharedList;
 
     } // ENDFOR grid batches
 

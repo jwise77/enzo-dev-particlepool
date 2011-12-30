@@ -128,7 +128,13 @@ int CommunicationShareParticles(int *NumberToMove, particle_data* &SendList,
       MPI_RecvListCount[i] = RecvListCount[i];
     }
 
+#ifndef MEMORY_POOL
     SharedList = new particle_data[NumberOfReceives];
+#else
+    SharedList = 
+      static_cast<particle_data*>(ParticleMemoryPool->GetMemory
+				  (sizeof(particle_data)*NumberOfReceives));
+#endif
  
     /******************************
           Share the particles
