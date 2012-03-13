@@ -21,7 +21,7 @@
 #include "mpi.h"
 #endif /* USE_MPI */
 
-#include <sys/malloc.h>
+//#include <sys/malloc.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

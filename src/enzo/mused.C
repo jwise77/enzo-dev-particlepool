@@ -110,7 +110,7 @@ void PrintMemoryUsage(char *str)
   if (debug) 
     printf("MEM mean/min/max = %lld/%lld/%lld :: %s \n", 
 	   MeanMem, MinMem, MaxMem, str);
-#endif
   fflush(memtracePtr);
+#endif
   return;
 }
